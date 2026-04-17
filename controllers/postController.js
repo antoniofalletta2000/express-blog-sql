@@ -69,13 +69,23 @@ const modify=(req,res)=>{
 
 const destroy=(req,res)=>{
     
-    const index= posts.findIndex(post=>post.id===parseInt(req.params.id))
-    if(index !=-1 ){
-        const postDeleted=posts.splice(index,1)
-        res.json(postDeleted)
-    }else{
-        res.status(404).json({message:"Nessun contenuto"})
-    }
+    const {id}=req.params
+
+    const sql="DELETE FROM posts WHERE id=?"
+
+    connection.query(sql, [id], (err,results)=>{
+        if (err) return res.status(500).json({
+            error:"Failed to delete post"
+        })
+
+        if (results.affectedRows===0){
+            return res.status(404).json({
+                error:true,
+                message:"Not Found, nothing to delete"
+            })
+        }
+        res.sendStatus(204)
+    })
 }
 
 module.exports={index, show, store, update, modify, destroy}
