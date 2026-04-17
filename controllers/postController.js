@@ -1,14 +1,17 @@
 const posts = require("../data/postsData")
-
+const connection = require("../data/db")
 
 const index= (req, res) => {
-    let tagData=posts
-    if((req.query.tag)){
-        tagData=posts.filter(item=>{
-            return item.tags.includes((req.query.tag).toLowerCase())
+    
+    const sql = "SELECT * FROM posts"
+
+    connection.query(sql,(err, results)=>{
+        if(err) return res.status(500).json({
+            error:"Database query failed"
         })
-    }
-    res.json(tagData)
+        res.json(results)
+    })
+    
 }
 
 const show=(req,res)=>{
