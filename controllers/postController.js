@@ -1,4 +1,5 @@
-const posts=require("../data/postsData")
+const posts = require("../data/postsData")
+
 
 const index= (req, res) => {
     let tagData=posts
