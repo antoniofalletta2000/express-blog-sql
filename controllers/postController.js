@@ -1,47 +1,63 @@
 const posts = require("../data/postsData")
 const connection = require("../data/db")
 
-const index= (req, res) => {
-    
+const index = (req, res) => {
+
     const sql = "SELECT * FROM posts"
 
-    connection.query(sql,(err, results)=>{
-        if(err) return res.status(500).json({
-            error:"Database query failed"
+    connection.query(sql, (err, results) => {
+        if (err) return res.status(500).json({
+            error: "Database query failed"
         })
         res.json(results)
     })
-    
+
 }
 
-const show=(req,res)=>{
-    
-    const {id}=req.params
+const show = (req, res) => {
 
-    const sql= "SELECT * FROM posts WHERE id=?"
+    const { id } = req.params
 
-    connection.query(sql, [id], (err, results)=>{
-
-        if(err) return res.status(500).json({
-            error:"Database query failed"
+    const postSql = `
+    SELECT posts.* 
+    FROM posts 
+    WHERE id=?
+    `
+    const tagSql = `
+        SELECT tags.*
+        FROM tags
+        JOIN post_tag ON tags.id= post_tag.tag_id
+        WHERE post_tag.post_id = ?
+        `
+    connection.query(postSql, [id], (err, postResults) => {
+        if (err) return res.status(500).json({
+            error: "Database query failed"
         })
-        
-        if(results.length===0) return res.status(404).json({
-            error:true,
-            message:"Posts not found"
+
+        if (postResults.length === 0) return res.status(404).json({
+            error: true,
+            message: "Posts not found"
         })
-        
-        res.json(results[0])
+        const post=postResults[0]
+        connection.query(tagSql, [id], (err, tagResult) => {
+
+            if (err) return res.status(500).json({
+                error: "Database query failed"
+            })
+
+            post.tags = tagResult
+            console.log(post.tags);
+            res.json(post)
+        })
     })
-    
 }
 
-const store=(req,res)=>{
-    const newId=posts[posts.length - 1].id + 1
-    const {title, content, image, tags}= req.body
+const store = (req, res) => {
+    const newId = posts[posts.length - 1].id + 1
+    const { title, content, image, tags } = req.body
 
-    const newPost={
-        id:newId,
+    const newPost = {
+        id: newId,
         title,
         content,
         image,
@@ -52,53 +68,53 @@ const store=(req,res)=>{
     console.log(posts);
 
     res.status(201).json(newPost)
-    
+
 }
 
-const update=(req,res)=>{
-    const id= parseInt(req.params.id)
+const update = (req, res) => {
+    const id = parseInt(req.params.id)
 
-    const post=posts.find(post=>post.id===id)
+    const post = posts.find(post => post.id === id)
 
-    if(!post){
+    if (!post) {
         res.status(404)
-        return res.json({error:"Not found", message:"Post non trovato"})
+        return res.json({ error: "Not found", message: "Post non trovato" })
     }
 
-    const {title, content, image, tags}=req.body
+    const { title, content, image, tags } = req.body
 
-    post.title=title
-    post.content=content
-    post.image=image
-    post.tags=tags
+    post.title = title
+    post.content = content
+    post.image = image
+    post.tags = tags
 
     res.json(posts)
 
 }
 
-const modify=(req,res)=>{
+const modify = (req, res) => {
     res.send(`Update post with id ${req.params.id}`)
 }
 
-const destroy=(req,res)=>{
-    
-    const {id}=req.params
+const destroy = (req, res) => {
 
-    const sql="DELETE FROM posts WHERE id=?"
+    const { id } = req.params
 
-    connection.query(sql, [id], (err,results)=>{
+    const sql = "DELETE FROM posts WHERE id=?"
+
+    connection.query(sql, [id], (err, results) => {
         if (err) return res.status(500).json({
-            error:"Failed to delete post"
+            error: "Failed to delete post"
         })
 
-        if (results.affectedRows===0){
+        if (results.affectedRows === 0) {
             return res.status(404).json({
-                error:true,
-                message:"Not Found, nothing to delete"
+                error: true,
+                message: "Not Found, nothing to delete"
             })
         }
         res.sendStatus(204)
     })
 }
 
-module.exports={index, show, store, update, modify, destroy}
+module.exports = { index, show, store, update, modify, destroy }
